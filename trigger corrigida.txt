@@ -1,0 +1,154 @@
+Banco de Dados II EC 2019
+Prazo: 14 de mai 23:59
+Trigger Auditoria
+
+Prof. Marcos Alves
+8 de mai
+Criar uma trigger para auditoria para todos os campos da tabela de empregado
+Seus trabalhos
+Devolvidos
+
+trigger_Empregado.sql
+SQL
+
+?SET search_path TO public;
+
+CREATE TABLE auditoria2 (
+	id_audit INTEGER PRIMARY KEY,
+	nome_tabela VARCHAR(20),
+	pk_tupla VARCHAR(30),
+	op_tupla CHAR(1) check (op_tupla in ('I','D','U')),
+	alt_tupla TEXT,
+	reg_tupla TEXT,
+	dt_alt_tupla TIMESTAMP
+
+);
+
+CREATE OR REPLACE FUNCTION fn_audit_empregado() RETURNS trigger AS $$
+DECLARE
+OPERACAO char(1); 
+ALTERACAO text DEFAULT ''; 
+ORIGINAL text DEFAULT '';
+id integer;
+
+BEGIN
+SELECT COALESCE(MAX(id_audit),0)+1 INTO id FROM auditoria;
+IF TG_OP = 'INSERT' THEN OPERACAO := 'I'; 
+ELSIF TG_OP = 'DELETE' THEN OPERACAO := 'D'; 
+ELSIF TG_OP = 'UPDATE' THEN OPERACAO := 'U'; 
+END IF;
+
+IF TG_OP = 'UPDATE' THEN
+	IF COALESCE(NEW.nomeinic,'') != COALESCE(OLD.nomeinic,'') THEN
+		ALTERACAO :=COALESCE (ALTERACAO || 'nomeinic=' || NEW.nomeinic || ',',
+							  ALTERACAO || 'nomeinic=');
+		ORIGINAL:=COALESCE (ORIGINAL	|| 'nomeinic=' || OLD.nomeinic || ',', 
+								ORIGINAL	|| 'nomeinic=');
+	END IF;
+	IF COALESCE(NEW.nomeint,'' )!= COALESCE(OLD.nomeint,'') THEN
+		ALTERACAO := COALESCE (ALTERACAO || 'nomeint=' || NEW.nomeint || ',',
+							   ALTERACAO || 'nomeint='); 
+ 		ORIGINAL:= COALESCE (ORIGINAL	|| 'nomeint=' || OLD.nomeint || ',',
+								 ORIGINAL	|| 'nomeint=');
+	END IF;
+	IF COALESCE(NEW.nomefin,'') != COALESCE(OLD.nomefin,'') THEN
+		ALTERACAO := COALESCE (ALTERACAO || 'nomefin=' || NEW.nomefin || ',',
+							   ALTERACAO || 'nomefin='); 
+		ORIGINAL	:= COALESCE (ORIGINAL	|| 'nomefin=' || OLD.nomefin || ',',
+								 ORIGINAL	|| 'nomefin=');
+	END IF;
+	IF COALESCE(NEW.datanasc,'') != COALESCE(OLD.datanasc,'') THEN
+		ALTERACAO :=COALESCE (ALTERACAO || 'datanasc=' || NEW.datanasc || ',', 
+							  ALTERACAO || 'datanasc='); 
+		ORIGINAL	:=COALESCE (ORIGINAL    || 'datanasc=' || OLD.datanasc || ',', 
+								ORIGINAL	|| 'datanasc=');
+	END IF;
+	IF COALESCE(NEW.endereco,'') != COALESCE(OLD.endereco,'') THEN
+		ALTERACAO :=COALESCE (ALTERACAO || 'endereco=' || NEW.endereco || ',', 
+							  ALTERACAO || 'endereco='); 
+		ORIGINAL	:=COALESCE (ORIGINAL    || 'endereco=' || OLD.endereco || ',', 
+								ORIGINAL	|| 'endereco=');
+	END IF;
+	IF COALESCE(NEW.sexo,'') != COALESCE(OLD.sexo,'') THEN
+		ALTERACAO :=COALESCE (ALTERACAO || 'sexo=' || NEW.sexo || ',', 
+							  ALTERACAO || 'sexo='); 
+		ORIGINAL	:=COALESCE (ORIGINAL    || 'sexo=' || OLD.sexo || ',', 
+								ORIGINAL	|| 'sexo=');
+	END IF;
+	IF COALESCE(NEW.salario,'') != COALESCE(OLD.salario,'') THEN
+		ALTERACAO :=COALESCE (ALTERACAO || 'salario=' || NEW.salario || ',', 
+							  ALTERACAO || 'salario='); 
+		ORIGINAL	:=COALESCE (ORIGINAL    || 'salario=' || OLD.salario || ',', 
+								ORIGINAL	|| 'salario=');
+	END IF;
+	IF COALESCE(NEW.coddepartamento,'') != COALESCE(OLD.coddepartamento,'') THEN
+		ALTERACAO :=COALESCE (ALTERACAO || 'coddepartamento=' || NEW.coddepartamento || ',', 
+							  ALTERACAO || 'coddepartamento='); 
+		ORIGINAL	:=COALESCE (ORIGINAL    || 'coddepartamento=' || OLD.coddepartamento|| ',', 
+								ORIGINAL	|| 'coddepartamento=');
+	END IF;
+	IF COALESCE(NEW.supcodempregado,'') != COALESCE(OLD.supcodempregado,'') THEN
+		ALTERACAO :=COALESCE (ALTERACAO || 'supcodempregado=' || NEW.supcodempregado|| ',', 
+							  ALTERACAO || 'supcodempregado='); 
+		ORIGINAL	:=COALESCE (ORIGINAL    || 'supcodempregado=' || OLD.supcodempregado || ',', 
+								ORIGINAL	|| 'supcodempregado=');
+	END IF;
+	INSERT INTO auditoria VALUES (id, TG_RELNAME, NEW.codempregado, OPERACAO, ALTERACAO, ORIGINAL, current_timestamp);						
+	RETURN NEW;
+
+ELSIF TG_OP = 'DELETE' THEN
+	ORIGINAL := 'codempregado=' || OLD.codempregado || ',';
+	ORIGINAL := COALESCE (ORIGINAL || 'nomeinic=' || OLD.nomeinic || ',',
+						  ORIGINAL || 'nomeinic='); 
+	ORIGINAL := COALESCE (ORIGINAL || 'nomeint=' || OLD.nomeint || ',',
+						  ORIGINAL || 'nomeint='); 
+	ORIGINAL := COALESCE (ORIGINAL || 'nomefin=' || OLD.nomefin|| ',',
+						  ORIGINAL || 'nomefin=' ); 
+	ORIGINAL := COALESCE (ORIGINAL || 'datanasce=' || OLD.datanasc ,
+						  ORIGINAL || 'datanasc=');
+	ORIGINAL := COALESCE (ORIGINAL || 'endereco=' || OLD.endereco ,
+						  ORIGINAL || 'endereco=');
+	ORIGINAL := COALESCE (ORIGINAL || 'sexo=' || OLD.sexo ,
+						  ORIGINAL || 'sexo=');					  
+	ORIGINAL := COALESCE (ORIGINAL || 'salario=' || OLD.salario ,
+						  ORIGINAL || 'salario=');
+	ORIGINAL := COALESCE (ORIGINAL || 'coddepartamento=' || OLD.coddepartamento,
+						  ORIGINAL || 'coddepartamento=');
+        ORIGINAL := COALESCE (ORIGINAL || 'supcodempregado=' || OLD.supcodempregado ,
+						  ORIGINAL || 'supcodempregado=');					
+	INSERT INTO auditoria VALUES (id, TG_RELNAME, OLD.codempregado, OPERACAO, ALTERACAO, ORIGINAL, current_timestamp);						
+	RETURN OLD;
+
+ELSIF TP_OP = 'INSERT' THEN
+							
+	ALTERACAO := COALESCE(ALTERACAO || 'nomeinic=' || NEW.nomeinic || ',',
+						   ALTERACAO || 'nomeinic=,') ;	
+	ALTERACAO := COALESCE (ALTERACAO || 'nomeint=' || NEW.nomeint || ',',
+						   ALTERACAO || 'nomeint='); 
+	ALTERACAO := COALESCE (ALTERACAO || 'nomefin=' || NEW.nomefin || ',',
+						   ALTERACAO || 'nomefin=' ); 
+	ALTERACAO := COALESCE (ALTERACAO || 'datanasc=' || NEW.datanasc ,
+						   ALTERACAO || 'datanasc=');
+	ALTERACAO := COALESCE (ALTERACAO || 'endereco=' || NEW.endereco ,
+						   ALTERACAO || 'endereco=');
+	ALTERACAO := COALESCE (ALTERACAO || 'sexo=' || NEW.sexo ,
+						   ALTERACAO || 'sexo=');
+	ALTERACAO := COALESCE (ALTERACAO || 'salario=' || NEW.salario ,
+						   ALTERACAO || 'salario=');	
+	ALTERACAO := COALESCE (ALTERACAO || 'coddepartamento=' || NEW.coddepartamento ,
+						   ALTERACAO || 'coddepartamento=');
+	ALTERACAO := COALESCE (ALTERACAO || 'supcodempregado=' || NEW.supcodempregado ,
+						   ALTERACAO || 'supcodempregado=');					   					   				   					   					   
+	INSERT INTO auditoria VALUES (id, TG_RELNAME, NEW.codempregado, OPERACAO, ALTERACAO, ORIGINAL, current_timestamp);
+	RETURN NEW;
+END IF;						
+
+
+END $$ LANGUAGE 'plpgsql'
+						
+CREATE TRIGGER audit_empregado BEFORE 
+UPDATE OR DELETE OR INSERT
+	ON empregado FOR EACH ROW
+	EXECUTE PROCEDURE fn_audit_empregado();				
+trigger_Empregado.sql
+Exibindo trigger_Empregado.sql.
