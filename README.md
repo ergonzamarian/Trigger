@@ -1,2 +1,2 @@
 # Trigger
-Trabalho com utilização de trigger
+Trabalho com utilização de trigger.
